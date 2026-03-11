@@ -1,36 +1,37 @@
 export async function POST(request) {                                                                                 
-    const { messages } = await request.json();
+    const { messages } = await request.json();                                                                          
     const GROQ_API_KEY = process.env.GROQ_API_KEY;                                                                      
-                  
-    if (!GROQ_API_KEY) {
-      return Response.json(
-        { error: "API key not configured. Add GROQ_API_KEY in Vercel environment variables." },
-        { status: 500 }
-      );
+    const SERPER_API_KEY = process.env.SERPER_API_KEY;
+                                                                                                                        
+    if (!GROQ_API_KEY) {                                                                                                
+      return Response.json(                                                                                             
+        { error: "API key not configured. Add GROQ_API_KEY in Vercel environment variables." },                         
+        { status: 500 }                                                                                                 
+      );                                                                                                                
     }
 
     const systemPrompt = `You are HuntFit, a refined personal style assistant. You help users find real clothes and
   fashion items to buy online.
 
-  For EVERY item you find, you MUST use this EXACT format:
+  For EVERY item you suggest, you MUST use this EXACT format:
 
   ITEM_START
-  NAME: [exact product name from the store]
+  NAME: [exact product name]
   BRAND: [brand name]
-  PRICE: [price with currency symbol]
-  URL: [full URL to the product page]
+  PRICE: [estimated price with currency symbol]
   DESCRIPTION: [1-2 sentences about the piece]
   CATEGORY: [one of: tops, bottoms, dresses, outerwear, shoes, accessories, activewear]
   ITEM_END
 
   Rules:
-  - Always find 3-5 items with realistic URLs from real stores (Zara, ASOS, H&M, Nike, Uniqlo, Mango, COS, etc)
+  - Always suggest 3-5 items
   - Always include the ITEM_START and ITEM_END markers exactly as shown
   - Each field must be on its own line
   - Before the items, write a brief friendly intro (1-2 sentences)
   - After the items, add a styling tip or follow-up question
   - If the user gives sizes or budget, respect them
-  - If the user just says hi, ask what they're looking for`;
+  - If the user just says hi, ask what they're looking for
+  - Do NOT include URLs, they will be fetched automatically`;
 
     const groqMessages = [
       { role: "system", content: systemPrompt },
@@ -41,7 +42,8 @@ export async function POST(request) {
     ];
 
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      // Step 1: Get item suggestions from Groq
+      const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,14 +57,66 @@ export async function POST(request) {
         }),
       });
 
-      const data = await response.json();
+      const groqData = await groqResponse.json();
 
-      if (data.error) {
-        console.error("Groq API error:", JSON.stringify(data.error));
-        return Response.json({ error: data.error.message }, { status: 500 });
+      if (groqData.error) {
+        console.error("Groq API error:", JSON.stringify(groqData.error));
+        return Response.json({ error: groqData.error.message }, { status: 500 });
       }
 
-      const text = data.choices?.[0]?.message?.content || "I couldn't find anything — try rephrasing?";
+      let text = groqData.choices?.[0]?.message?.content || "";
+
+      // Step 2: For each item, search Serper for real URL + image
+      if (SERPER_API_KEY) {
+        const itemRegex = /ITEM_START\s*\nNAME:\s*(.+)\nBRAND:\s*(.+)\nPRICE:\s*(.+)\nDESCRIPTION:\s*([\s\S]+?)\nCATEGOR
+  Y:\s*(.+)\s*\nITEM_END/g;
+        const matches = [...text.matchAll(itemRegex)];
+
+        const enriched = await Promise.all(
+          matches.map(async (m) => {
+            const name = m[1].trim();
+            const brand = m[2].trim();
+            const query = `${brand} ${name} buy online`;
+
+            try {
+              const serperRes = await fetch("https://google.serper.dev/shopping", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-API-KEY": SERPER_API_KEY,
+                },
+                body: JSON.stringify({ q: query, num: 1 }),
+              });
+
+              const serperData = await serperRes.json();
+              const result = serperData.shopping?.[0];
+
+              return {
+                original: m[0],
+                url: result?.link || "https://www.google.com/search?q=" + encodeURIComponent(query),
+                imageUrl: result?.imageUrl || "",
+                price: result?.price || m[3].trim(),
+              };
+            } catch {
+              return {
+                original: m[0],
+                url: "https://www.google.com/search?q=" + encodeURIComponent(query),
+                imageUrl: "",
+                price: m[3].trim(),
+              };
+            }
+          })
+        );
+
+        // Replace each ITEM block with enriched version including URL and IMAGE
+        enriched.forEach(({ original, url, imageUrl, price }) => {
+          const enrichedBlock = original
+            .replace(/PRICE:\s*.+/, `PRICE: ${price}`)
+            .replace("ITEM_END", `URL: ${url}\nIMAGE: ${imageUrl}\nITEM_END`);
+          text = text.replace(original, enrichedBlock);
+        });
+      }
+
       return Response.json({ text });
 
     } catch (error) {
