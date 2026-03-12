@@ -10,8 +10,8 @@
   /* ─────────────── PARSERS ─────────────── */
   function parseItems(text) {
     const items = [];
-    const regex = /ITEM_START\s*\nNAME:\s*(.+)\nBRAND:\s*(.+)\nPRICE:\s*(.+)\nDESCRIPTION:\s*([\s\S]+?)\nCATEGORY:\s*(.+
-  )\nURL:\s*(.+)\nIMAGE:\s*(.*)\nITEM_END/g;
+    const regex = /ITEM_START\s+NAME:\s*(.+?)\s*\nBRAND:\s*(.+?)\s*\nPRICE:\s*(.+?)\s*\nDESCRIPTION:\s*([\s\S]+?)\nCATEG
+  ORY:\s*(.+?)\s*\nURL:\s*(.+?)\s*\nIMAGE:\s*(.*?)\s*\nITEM_END/g;
     let m;
     while ((m = regex.exec(text)) !== null) {
       items.push({
@@ -24,6 +24,7 @@
     const cleaned = text.replace(/ITEM_START[\s\S]*?ITEM_END/g, "").replace(/\n{3,}/g, "\n\n").trim();
     return { items, conversationalText: cleaned };
   }
+
 
   /* ─────────────── THEMES ─────────────── */
   const DARK = {
