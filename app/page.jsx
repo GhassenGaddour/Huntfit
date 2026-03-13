@@ -11,8 +11,8 @@
   function parseItems(text) {
     const items = [];
     const regex = new RegExp(
-      "ITEM_START\\s+NAME:\\s*(.+?)\\s*\\nBRAND:\\s*(.+?)\\s*\\nPRICE:\\s*(.+?)\\s*\\nDESCRIPTION:\\s*([\\s\\S]+?)\\nCAT
-  EGORY:\\s*(.+?)\\s*\\nURL:\\s*(.+?)\\s*\\nIMAGE:\\s*(.*?)\\s*\\nITEM_END",
+       "ITEM_START\\s+NAME:\\s*(.+?)\\s*\\nBRAND:\\s*(.+?)\\s*\\nPRICE:\\s*(.+?)\\s*\\nDESCRIPTION:\\s*([\\
+  s\\S]+?)\\nCATEGORY:\\s*(.+?)\\s*\\nURL:\\s*(.+?)\\s*\\nIMAGE:\\s*(.*?)\\s*\\nITEM_END",
       "g"
     );
     let m;
@@ -355,7 +355,7 @@
         });
       });
       if (all.length !== feedItems.length) setFeedItems(all);
-    }, [messages]);
+    }, [messages, feedItems]);
 
     const handleLogout = async () => {
       if (supabase) await supabase.auth.signOut();
