@@ -68,8 +68,9 @@ export async function POST(request) {
 
       if (SERPER_API_KEY) {
         // Flexible regex that handles any whitespace between fields
-        const itemRegex = /ITEM_START\s+NAME:\s*(.+?)\s*\n\s*BRAND:\s*(.+?)\s*\n\s*PRICE:\s*(.+?)\s*\n\s*DESCRIPTION:\s*
-  ([\s\S]+?)\s*\n\s*CATEGORY:\s*(.+?)\s*\n\s*ITEM_END/g;
+        const itemRegex = /ITEM_START\s+NAME:\s*(.+?)\s*\n\s*BRAND:\s*(.+?)\s*\n\s*PRICE:\s*(.+?)\s*\n\s*DES
+  CRIPTION:\s*([\s\S]+?)\s*\n\s*CATEGORY:\s*(.+?)\s*\n\s*ITEM_END/g;
+
         const matches = [...text.matchAll(itemRegex)];
 
         console.log(`Found ${matches.length} items to enrich`);
