@@ -129,8 +129,7 @@
   "uppercase", marginBottom: 32 }}>Curated Style</div>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24,
   textAlign: "left" }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary, marginBottom: 20 }}>{isLogin ? "Welcome
-  back" : "Create account"}</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: C.textPrimary, marginBottom: 20  }}>{isLogin ? "Welcome back" : "Create account"}</div>
             {error && <div style={{ background: `${C.bordeaux}15`, border: `1px solid ${C.bordeaux}30`, borderRadius: 8,
    padding: "10px 14px", marginBottom: 16, fontSize: 13, color: C.bordeauxLight }}>{error}</div>}
             {success && <div style={{ background: "#6B9B6B15", border: "1px solid #6B9B6B30", borderRadius: 8, padding: 
