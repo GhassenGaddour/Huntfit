@@ -9,24 +9,33 @@
 
   /* ─────────────── PARSERS ─────────────── */
   function parseItems(text) {
-    const items = [];
-    const regex = new RegExp(
-       "ITEM_START\\s+NAME:\\s*(.+?)\\s*\\nBRAND:\\s*(.+?)\\s*\\nPRICE:\\s*(.+?)\\s*\\nDESCRIPTION:\\s*([\\
-  s\\S]+?)\\nCATEGORY:\\s*(.+?)\\s*\\nURL:\\s*(.+?)\\s*\\nIMAGE:\\s*(.*?)\\s*\\nITEM_END",
-      "g"
-    );
-    let m;
-    while ((m = regex.exec(text)) !== null) {
-      items.push({
-        name: m[1].trim(), brand: m[2].trim(), price: m[3].trim(),
-        description: m[4].trim(), category: m[5].trim().toLowerCase(),
-        url: m[6].trim(), image: m[7].trim(),
-        id: Math.random().toString(36).slice(2, 9),
-      });
-    }
-    const cleaned = text.replace(/ITEM_START[\s\S]*?ITEM_END/g, "").replace(/\n{3,}/g, "\n\n").trim();
-    return { items, conversationalText: cleaned };
+  const items = [];
+  // Regex with named capture groups
+  const regex = /ITEM_START\s+NAME:\s*(?<name>.+?)\s*\nBRAND:\s*(?<brand>.+?)\s*\nPRICE:\s*(?<price>.+?)\s*\nDESCRIPTION:\s*(?<description>[\s\S]+?)\nCATEGORY:\s*(?<category>.+?)\s*\nURL:\s*(?<url>.+?)\s*\nIMAGE:\s*(?<image>.*?)\s*\nITEM_END/g;
+
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const { name, brand, price, description, category, url, image } = match.groups;
+    items.push({
+      name: name?.trim() || "",
+      brand: brand?.trim() || "",
+      price: price?.trim() || "",
+      description: description?.trim() || "",
+      category: category?.trim().toLowerCase() || "",
+      url: url?.trim() || "",
+      image: image?.trim() || "",
+      id: Math.random().toString(36).slice(2, 9),
+    });
   }
+
+  // Remove all item blocks from text to get conversational content
+  const conversationalText = text
+    .replace(/ITEM_START[\s\S]*?ITEM_END/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return { items, conversationalText };
+}
 
 
 
